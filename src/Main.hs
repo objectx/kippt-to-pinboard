@@ -4,7 +4,7 @@ module Main (main) where
 
 import           Control.Lens               (makeLenses, to, (&), (.~), (^.))
 import qualified Data.Aeson                 as Aeson
-import qualified Data.Aeson.Lens
+import Data.Aeson.Lens (key, _String)
 import qualified Data.ByteString.Char8      as C8
 import qualified Data.ByteString.Lazy.Char8 as LC8
 import qualified Data.Text                  as T
@@ -15,8 +15,6 @@ import qualified Network.Wreq               as Wreq
 import           Options.Applicative        ((<$>), (<**>), (<*>), (<>))
 import qualified Options.Applicative        as OA
 import qualified System.IO                  as IO
-import           Text.XML                   as XML
-import           Text.XML.Lens              (el, root, text)
 
 data Config = Config
     { _user     :: !String
@@ -56,8 +54,7 @@ getAPIToken :: ManagerSettings -> Config -> IO String
 getAPIToken mgr cfg = do
     let opt = Wreq.defaults & Wreq.manager .~ Left (managerSettings 30)
                             & Wreq.auth .~ Wreq.basicAuth (cfg ^. user . to C8.pack) (cfg ^. password . to C8.pack)
-    r <- Wreq.getWith opt "https://api.pinboard.in/v1/user/api_token"
-    let xml = XML.parseLBS_ XML.def $ r ^. responseBody
-    return $ xml ^. root . el "result" . text . to T.unpack
+    r <- Wreq.getWith opt "https://api.pinboard.in/v1/user/api_token?format=json"
+    return $ r ^. responseBody . key "result" . _String . to T.unpack
 
 --- END OF FILE ---

@@ -26,5 +26,3 @@ executable kippt-to-pinboard
                      , wreq
                      , http-client
                      , http-client-tls
-                     , xml-conduit
-                     , xml-lens
