@@ -2,9 +2,10 @@
 
 module Main (main) where
 
+import           Control.Applicative        (some)
 import           Control.Lens               (makeLenses, to, (&), (.~), (^.))
 import qualified Data.Aeson                 as Aeson
-import Data.Aeson.Lens (key, _String)
+import           Data.Aeson.Lens            (key, _String)
 import qualified Data.ByteString.Char8      as C8
 import qualified Data.ByteString.Lazy.Char8 as LC8
 import qualified Data.Text                  as T
@@ -19,6 +20,7 @@ import qualified System.IO                  as IO
 data Config = Config
     { _user     :: !String
     , _password :: !String
+    , _files    :: ![String]
     } deriving Show
 
 makeLenses ''Config
@@ -40,6 +42,7 @@ progConfig = OA.info (config <**> OA.helper) (OA.fullDesc <> OA.progDesc "Import
                                      <> OA.metavar "PASSWORD"
                                      <> OA.help "Pinboard password"
                                      <> OA.value "We who about to die salute you!")
+                    <*> some (OA.argument OA.str (OA.metavar "FILE..."))
 
 sendToPinboard :: Config -> IO ()
 sendToPinboard cfg = do
