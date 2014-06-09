@@ -3,7 +3,9 @@
 module Main (main) where
 
 import           Control.Applicative        (some)
-import           Control.Lens               (makeLenses, to, (&), (.~), (^.))
+import           Control.Lens               (makeLenses, to, zoom, (&), (.~),
+                                             (^.))
+import           Control.Monad              (forM_)
 import qualified Data.Aeson                 as Aeson
 import           Data.Aeson.Lens            (key, _String)
 import qualified Data.ByteString.Char8      as C8
@@ -15,7 +17,15 @@ import           Network.Wreq               (responseBody)
 import qualified Network.Wreq               as Wreq
 import           Options.Applicative        ((<$>), (<**>), (<*>), (<>))
 import qualified Options.Applicative        as OA
+import           Pipes                      ((>->))
+import qualified Pipes                      as P
+import qualified Pipes.Aeson                as PA
+import qualified Pipes.ByteString           as PB
+import qualified Pipes.Parse                as PP
 import qualified System.IO                  as IO
+import Data.Default.Class (def)
+
+import Data.Kippt as DK
 
 data Config = Config
     { _user     :: !String
@@ -49,6 +59,8 @@ sendToPinboard cfg = do
     let !mgr = managerSettings 20
     token <- getAPIToken mgr cfg
     IO.putStrLn token
+    bookmarks <- DK.fromFile $ head $ cfg ^. files
+    mapM_ print $ bookmarks
 
 managerSettings :: Integer -> ManagerSettings
 managerSettings timeout = tlsManagerSettings { managerResponseTimeout = Just (fromInteger $ timeout * 1000 * 1000) }
@@ -59,5 +71,8 @@ getAPIToken mgr cfg = do
                             & Wreq.auth .~ Wreq.basicAuth (cfg ^. user . to C8.pack) (cfg ^. password . to C8.pack)
     r <- Wreq.getWith opt "https://api.pinboard.in/v1/user/api_token?format=json"
     return $ r ^. responseBody . key "result" . _String . to T.unpack
+
+readBookmarks :: Config -> IO ()
+readBookmarks cfg = undefined
 
 --- END OF FILE ---
