@@ -21,8 +21,15 @@ executable kippt-to-pinboard
                      , containers
                      , text
                      , optparse-applicative
+                     , filepath
                      , aeson
                      , lens
                      , wreq
                      , http-client
                      , http-client-tls
+                     , pipes
+                     , pipes-aeson
+                     , pipes-bytestring
+                     , pipes-parse
+                     , unix-time
+                     , data-default-class
