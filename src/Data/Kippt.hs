@@ -22,9 +22,8 @@ import           Data.Aeson.Lens      (key, values)
 import           Data.Aeson.Types     (parseMaybe)
 import           Data.ByteString.Lazy (hGetContents)
 import           Data.Default.Class   (Default (..))
-import           Data.Maybe           (catMaybes, fromMaybe)
+import           Data.Maybe           (catMaybes)
 import qualified Data.Text            as T
-import qualified Data.UnixTime        as UT
 import           System.FilePath      ()
 import qualified System.IO            as IO
 
@@ -34,7 +33,7 @@ data KipptBookmark = KipptBookmark
     , _isFavorited :: !Bool
     , _title       :: !T.Text
     , _url         :: !T.Text
-    , _notes       :: Maybe T.Text
+    , _notes       :: !(Maybe T.Text)
     } deriving Show
 
 makeLenses ''KipptBookmark

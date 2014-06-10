@@ -12,6 +12,7 @@ import qualified Data.ByteString.Char8      as C8
 import qualified Data.ByteString.Lazy.Char8 as LC8
 import           Data.Default.Class         (def)
 import qualified Data.Text                  as T
+import qualified Data.Text.IO as T
 import           Network.HTTP.Client        (ManagerSettings (..))
 import           Network.HTTP.Client.TLS    (tlsManagerSettings)
 import           Network.Wreq               (responseBody)
@@ -23,6 +24,7 @@ import qualified Pipes                      as P
 import qualified Pipes.Aeson                as PA
 import qualified Pipes.ByteString           as PB
 import qualified Pipes.Parse                as PP
+import qualified Data.UnixTime as UT
 import qualified System.IO                  as IO
 
 import           Data.Kippt                 as DK
@@ -60,7 +62,17 @@ sendToPinboard cfg = do
     token <- getAPIToken mgr cfg
     IO.putStrLn token
     bookmarks <- DK.fromFile $ head $ cfg ^. files
-    mapM_ print $ bookmarks
+    mapM_ printBookmark $ bookmarks
+
+printBookmark :: DK.KipptBookmark -> IO ()
+printBookmark x = do
+    C8.putStr $ x ^. DK.createdTime . to (UT.formatUnixTimeGMT "%FT%TZ" . UT.fromEpochTime . fromIntegral)
+    IO.putStr " "
+    C8.putStr $ x ^. DK.updatedTime . to (UT.formatUnixTimeGMT "%FT%TZ" . UT.fromEpochTime . fromIntegral)
+    IO.putStr " "
+    T.putStr $ x ^. DK.url
+    IO.putStr " "
+    T.putStrLn $ x ^. DK.title
 
 managerSettings :: Integer -> ManagerSettings
 managerSettings timeout = tlsManagerSettings { managerResponseTimeout = Just (fromInteger $ timeout * 1000 * 1000) }
