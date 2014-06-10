@@ -10,6 +10,7 @@ import qualified Data.Aeson                 as Aeson
 import           Data.Aeson.Lens            (key, _String)
 import qualified Data.ByteString.Char8      as C8
 import qualified Data.ByteString.Lazy.Char8 as LC8
+import           Data.Default.Class         (def)
 import qualified Data.Text                  as T
 import           Network.HTTP.Client        (ManagerSettings (..))
 import           Network.HTTP.Client.TLS    (tlsManagerSettings)
@@ -23,9 +24,8 @@ import qualified Pipes.Aeson                as PA
 import qualified Pipes.ByteString           as PB
 import qualified Pipes.Parse                as PP
 import qualified System.IO                  as IO
-import Data.Default.Class (def)
 
-import Data.Kippt as DK
+import           Data.Kippt                 as DK
 
 data Config = Config
     { _user     :: !String

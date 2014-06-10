@@ -13,22 +13,20 @@ module Data.Kippt
     )
     where
 
-import           Control.Applicative ((<$>), (<*>))
-import Data.Traversable (for)
-import           Control.Lens        (makeLenses, (^.), (&), (^..), (^?), to, traversed)
-import           Control.Monad       (mzero)
-import           Data.Aeson          ((.:), (.:?), (.!=))
-import qualified Data.Aeson          as DA
-import Data.Aeson.Lens (key, values, _Array, _String, _Integer, _Bool, _Primitive, Primitive (..))
-import           Data.Default.Class  (Default (..))
-import qualified Data.Text           as T
-import qualified Data.UnixTime       as UT
-import qualified Pipes as P
-import qualified Pipes.Parse as PP
-import qualified System.IO as IO
-import  Data.ByteString.Lazy (hGetContents)
-import System.FilePath (FilePath(..))
-import Debug.Trace (trace, traceShow)
+import           Control.Applicative  ((<$>), (<*>))
+import           Control.Lens         (makeLenses, to, (^..))
+import           Control.Monad        (mzero)
+import           Data.Aeson           ((.:))
+import qualified Data.Aeson           as DA
+import           Data.Aeson.Lens      (key, values)
+import           Data.Aeson.Types     (parseMaybe)
+import           Data.ByteString.Lazy (hGetContents)
+import           Data.Default.Class   (Default (..))
+import           Data.Maybe           (catMaybes, fromMaybe)
+import qualified Data.Text            as T
+import qualified Data.UnixTime        as UT
+import           System.FilePath      ()
+import qualified System.IO            as IO
 
 data KipptBookmark = KipptBookmark
     { _createdTime :: !Integer
@@ -36,13 +34,13 @@ data KipptBookmark = KipptBookmark
     , _isFavorited :: !Bool
     , _title       :: !T.Text
     , _url         :: !T.Text
-    , _notes       :: !T.Text
+    , _notes       :: Maybe T.Text
     } deriving Show
 
 makeLenses ''KipptBookmark
 
 instance Default KipptBookmark where
-    def = KipptBookmark 0 0 True "dummy" "http://example.com" "empty"
+    def = KipptBookmark 0 0 True "dummy" "http://example.com" Nothing
 
 instance DA.FromJSON KipptBookmark where
     parseJSON (DA.Object v) =
@@ -54,41 +52,16 @@ instance DA.FromJSON KipptBookmark where
                       <*> v .: "notes"
     parseJSON _ = mzero
 
+fromFile :: FilePath -> IO [KipptBookmark]
 fromFile path = do
     IO.withBinaryFile path IO.ReadMode fromHandle
 
 fromHandle :: IO.Handle -> IO [KipptBookmark]
 fromHandle h = do
     input <- hGetContents h
-    let json = DA.decode input :: Maybe DA.Value
-    case json of
+    case DA.decode input :: Maybe DA.Value of
         Nothing -> return []
-        Just v -> do
-            return $ extract v
+        Just v  -> return $ catMaybes $ v ^.. values . key "objects" . values . to toKippt
 
-extract :: DA.Value -> [KipptBookmark]
-extract kippt =
-    kippt ^.. values . key "objects" . values . to toKippt
-
-
-toKippt :: DA.Value -> KipptBookmark
-toKippt v = do
-    KipptBookmark (getDate v "created")
-                  (getDate v "updated")
-                  (getFav v)
-                  (v ^. (key "title") . _String)
-                  (v ^. (key "url") . _String)
-                  (v ^. (key "notes") . _String)
-
-getDate v slot =
-    case v ^? key slot . _Integer of
-        Nothing -> 0
-        Just date -> date
-
-getFav v =
-    case v ^? key "is_favorite" . _Bool of
-        Nothing -> False
-        Just f -> f
-
-extractObjects v =
-    v ^.. values . key "objects"
+toKippt :: DA.Value -> Maybe KipptBookmark
+toKippt v = parseMaybe DA.parseJSON v :: Maybe KipptBookmark
