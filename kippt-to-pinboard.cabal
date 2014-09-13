@@ -24,6 +24,7 @@ executable kippt-to-pinboard
                      , filepath
                      , aeson
                      , lens
+                     , lens-aeson
                      , wreq
                      , http-client
                      , http-client-tls
